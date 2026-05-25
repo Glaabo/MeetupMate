@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Better Auth models
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  createdGroups  Group[]         @relation("GroupCreator")
+  memberships    GroupMember[]
+  availabilities Availability[]
+  invitesCreated Invite[]        @relation("InviteCreator")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
+}
+
+// MeetupMate domain
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+model Group {
+  id             String   @id @default(cuid())
+  name           String
+  createdById    String
+  /// Minimum available members for a day to count as a match. 0 = require all members.
+  matchThreshold Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  createdBy      User           @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members        GroupMember[]
+  invites        Invite[]
+  availabilities Availability[]
+
+  @@index([createdById])
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model Invite {
+  id          String   @id @default(cuid())
+  groupId     String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  maxUses     Int?
+  useCount    Int      @default(0)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("InviteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+}
+
+model Availability {
+  id      String   @id @default(cuid())
+  groupId String
+  userId  String
+  date    DateTime @db.Date
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId, date])
+  @@index([groupId, date])
+}
