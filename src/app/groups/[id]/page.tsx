@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { ThemeSummary } from "@/components/ThemeSummary";
 import { prisma } from "@/lib/db";
 import { effectiveMatchThreshold } from "@/lib/permissions";
 import { requireSession } from "@/lib/session";
 import { InvitePanel } from "./invite-panel";
+import { ThemeEditor } from "./theme-editor";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -18,6 +20,8 @@ export default async function GroupPage({ params }: Props) {
       group: {
         include: {
           _count: { select: { members: true } },
+          boardGame: true,
+          penAndPaper: true,
           members: {
             include: { user: { select: { name: true, id: true } } },
           },
@@ -29,6 +33,7 @@ export default async function GroupPage({ params }: Props) {
   if (!membership) notFound();
 
   const { group } = membership;
+  const isOwner = membership.role === "OWNER";
   const threshold = effectiveMatchThreshold(
     group.matchThreshold,
     group._count.members,
@@ -38,6 +43,24 @@ export default async function GroupPage({ params }: Props) {
     <>
       <AppHeader title={group.name} backHref="/groups" />
       <main className="mx-auto max-w-lg px-4 py-6">
+        <ThemeSummary
+          theme={group.theme}
+          boardGame={group.boardGame}
+          penAndPaper={group.penAndPaper}
+          themeNotes={group.themeNotes}
+        />
+        {isOwner && (
+          <ThemeEditor
+            groupId={id}
+            initial={{
+              theme: group.theme,
+              boardGameId: group.boardGameId ?? "",
+              penAndPaperId: group.penAndPaperId ?? "",
+              themeNotes: group.themeNotes ?? "",
+            }}
+          />
+        )}
+
         <p className="mb-4 text-sm text-zinc-600">
           Match when at least <strong>{threshold}</strong> of{" "}
           <strong>{group._count.members}</strong> members are free.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { GroupSwitcher } from "@/components/GroupSwitcher";
 import { prisma } from "@/lib/db";
+import { getThemeDefinition } from "@/lib/themes";
 import { requireSession } from "@/lib/session";
 
 export default async function GroupsPage() {
@@ -10,7 +11,13 @@ export default async function GroupsPage() {
   const memberships = await prisma.groupMember.findMany({
     where: { userId: session.user.id },
     include: {
-      group: { include: { _count: { select: { members: true } } } },
+      group: {
+        include: {
+          _count: { select: { members: true } },
+          boardGame: { select: { name: true } },
+          penAndPaper: { select: { name: true } },
+        },
+      },
     },
     orderBy: { joinedAt: "desc" },
   });
@@ -19,6 +26,8 @@ export default async function GroupsPage() {
     id: m.group.id,
     name: m.group.name,
     memberCount: m.group._count.members,
+    themeLabel: getThemeDefinition(m.group.theme).label,
+    activityName: m.group.boardGame?.name ?? m.group.penAndPaper?.name ?? null,
   }));
 
   return (

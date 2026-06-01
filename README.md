@@ -8,6 +8,7 @@ Privacy-oriented web app to find days when friends can meet. Each person marks d
 
 - Email/password or magic-link sign-in (Better Auth)
 - Optional Google OAuth when `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set
+- **Meetup themes** — board games (pick from catalog), pen & paper RPGs, coffee, outdoor, video games, cooking/potluck, sports, or general hangout
 - Create groups, invite via expiring links (hashed tokens stored server-side)
 - Per-group availability (full days only in v1)
 - Shared calendar with `available / members` counts and threshold highlighting
@@ -36,6 +37,7 @@ cp .env.example .env
 
 npm install
 npm run db:migrate   # or: npx prisma migrate deploy
+npm run db:seed      # board games + pen & paper catalog
 npm run dev
 ```
 

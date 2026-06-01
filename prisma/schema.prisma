@@ -75,21 +75,64 @@ enum GroupRole {
   MEMBER
 }
 
+enum MeetupTheme {
+  GENERAL
+  BOARD_GAMES
+  PEN_AND_PAPER
+  COFFEE_SOCIAL
+  OUTDOOR
+  VIDEO_GAMES
+  COOKING_POTLUCK
+  SPORTS
+}
+
+model BoardGame {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  slug             String   @unique
+  minPlayers       Int
+  maxPlayers       Int
+  playTimeMinutes  Int
+  description      String?
+  createdAt        DateTime @default(now())
+
+  groups Group[]
+}
+
+model PenAndPaperGame {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  system      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  groups Group[]
+}
+
 model Group {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   name           String
   createdById    String
   /// Minimum available members for a day to count as a match. 0 = require all members.
-  matchThreshold Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  matchThreshold Int         @default(0)
+  theme          MeetupTheme @default(GENERAL)
+  boardGameId    String?
+  penAndPaperId  String?
+  /// Optional notes (e.g. preferred café, trail name) for themes without a catalog pick.
+  themeNotes     String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  createdBy      User           @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy      User             @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  boardGame      BoardGame?       @relation(fields: [boardGameId], references: [id], onDelete: SetNull)
+  penAndPaper    PenAndPaperGame? @relation(fields: [penAndPaperId], references: [id], onDelete: SetNull)
   members        GroupMember[]
   invites        Invite[]
   availabilities Availability[]
 
   @@index([createdById])
+  @@index([theme])
 }
 
 model GroupMember {

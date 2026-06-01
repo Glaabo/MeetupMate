@@ -3,12 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { ThemePicker, type ThemePickerValue } from "@/components/ThemePicker";
 
 export default function NewGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [matchAll, setMatchAll] = useState(true);
   const [minMembers, setMinMembers] = useState(2);
+  const [themeValue, setThemeValue] = useState<ThemePickerValue>({
+    theme: "GENERAL",
+    boardGameId: "",
+    penAndPaperId: "",
+    themeNotes: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,10 +30,20 @@ export default function NewGroupPage() {
         body: JSON.stringify({
           name,
           matchThreshold: matchAll ? 0 : minMembers,
+          theme: themeValue.theme,
+          boardGameId: themeValue.boardGameId || null,
+          penAndPaperId: themeValue.penAndPaperId || null,
+          themeNotes: themeValue.themeNotes || null,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.toString() ?? "Failed to create group");
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "Failed to create group",
+        );
+      }
       router.push(`/groups/${data.group.id}`);
       router.refresh();
     } catch (err) {
@@ -51,6 +68,9 @@ export default function NewGroupPage() {
               maxLength={100}
             />
           </label>
+
+          <ThemePicker value={themeValue} onChange={setThemeValue} />
+
           <fieldset className="rounded-lg border border-zinc-200 p-4 text-sm">
             <legend className="px-1 font-medium">Highlight days when</legend>
             <label className="mt-2 flex items-center gap-2">
