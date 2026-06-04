@@ -8,7 +8,7 @@ Privacy-oriented web app to find days when friends can meet. Each person marks d
 
 - Email/password or magic-link sign-in (Better Auth)
 - Optional Google OAuth when `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set
-- **Meetup themes** — board games (pick from catalog), pen & paper RPGs, coffee, outdoor, video games, cooking/potluck, sports, or general hangout
+- **Meetup themes** — general hangout, coffee, outdoor, video games, cooking/potluck, sports (optional notes per group)
 - Create groups, invite via expiring links (hashed tokens stored server-side)
 - Per-group availability (full days only in v1)
 - Shared calendar with `available / members` counts and threshold highlighting
@@ -37,7 +37,6 @@ cp .env.example .env
 
 npm install
 npm run db:migrate   # or: npx prisma migrate deploy
-npm run db:seed      # board games + pen & paper catalog
 npm run dev
 ```
 
@@ -52,6 +51,46 @@ docker compose up -d
 ```
 
 Default URL: `postgresql://meetupmate:meetupmate@localhost:5432/meetupmate`
+
+### WSL2 on Windows
+
+Run **all** install and dev commands inside the Linux distro (Ubuntu), not from Windows CMD, PowerShell, or a terminal that uses `C:\Program Files\nodejs` against `\\wsl.localhost\...` paths.
+
+**Symptoms if you mix Windows + UNC paths:**
+
+- `UNC paths are not supported` / npm `cwd` shows `\\wsl.localhost\Ubuntu\...`
+- Prisma preinstall fails: `Cannot find module 'C:\Windows\scripts\preinstall-entry.js'`
+- `EPERM` when npm tries to clean up `node_modules` on the WSL mount
+
+**Fix:**
+
+1. Open **WSL** (Windows Terminal → Ubuntu, or `wsl -d Ubuntu`).
+2. Work from the Linux path, not the UNC share:
+
+   ```bash
+   cd ~/MeetupMate   # not \\wsl.localhost\Ubuntu\home\david\MeetupMate
+   ```
+
+3. Confirm Node and npm are the Linux versions:
+
+   ```bash
+   which node npm
+   # e.g. /usr/bin/node — not /mnt/c/Program Files/nodejs/...
+   node -v   # 22+ recommended
+   ```
+
+4. If `which node` points at Windows, install Node inside WSL ([NodeSource](https://github.com/nodesource/distributions) or `nvm`) and use that shell for the project.
+
+5. If a previous install left a broken tree, remove it from WSL and reinstall:
+
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+
+6. In VS Code / Cursor, use **“Reopen Folder in WSL”** (or open the folder as `\\wsl$\Ubuntu\home\david\MeetupMate` only with the **WSL** integrated terminal) so the default terminal runs Linux `npm`, not Windows `npm`.
+
+Optional native bindings (Next.js SWC, Tailwind oxide, `sharp`) are skipped when Windows npm installs on a UNC path; a full Linux `npm install` restores them.
 
 ## Environment variables
 
