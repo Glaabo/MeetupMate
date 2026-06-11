@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { availability, groupMembers, groups } from "@/db/schema";
+import { availability, feedEvents, groupMembers, groups } from "@/db/schema";
 import { getSession } from "@/lib/session";
 
 /** GDPR-style export of everything stored about the signed-in user. */
@@ -22,18 +22,27 @@ export async function GET() {
     .innerJoin(groups, eq(groups.id, groupMembers.groupId))
     .where(eq(groupMembers.userId, me.id));
 
-  const myAvailability = await db
+  const blobs = await db
     .select({
       groupId: availability.groupId,
-      date: availability.date,
-      status: availability.status,
+      ciphertext: availability.ciphertext,
       updatedAt: availability.updatedAt,
     })
     .from(availability)
     .where(eq(availability.userId, me.id));
 
+  const publishedFeedEvents = await db
+    .select({
+      groupId: feedEvents.groupId,
+      date: feedEvents.date,
+      title: feedEvents.title,
+    })
+    .from(feedEvents)
+    .where(eq(feedEvents.userId, me.id));
+
   const payload = {
     exportedAt: new Date().toISOString(),
+    note: "availabilityBlobs are end-to-end encrypted with your group keys; the server cannot read them.",
     user: {
       id: me.id,
       name: me.name,
@@ -41,7 +50,8 @@ export async function GET() {
       createdAt: me.createdAt,
     },
     groups: memberships,
-    availability: myAvailability,
+    availabilityBlobs: blobs,
+    calendarFeedEvents: publishedFeedEvents,
   };
 
   return new Response(JSON.stringify(payload, null, 2), {

@@ -1,37 +1,29 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { availability } from "@/db/schema";
-import { isValidISODate } from "@/lib/dates";
 import { newId } from "@/lib/ids";
 import { getMembership } from "@/lib/data/groups";
 import { requireUser } from "@/lib/session";
 
-export type DayStatus = "free" | "maybe" | null;
+/** Generous cap; a year of daily marks encrypts to a few KB. */
+const MAX_BLOB_LENGTH = 200_000;
 
-/** Sets (or clears, with null) the caller's availability for one day in a group. */
-export async function setAvailability(
+/**
+ * Stores the caller's end-to-end encrypted availability blob for a group.
+ * The blob is encrypted client-side; the server cannot read it.
+ */
+export async function saveAvailabilityBlob(
   groupId: string,
-  date: string,
-  status: DayStatus,
+  ciphertext: string,
 ): Promise<{ error?: string }> {
   const me = await requireUser();
-  if (!isValidISODate(date)) return { error: "Invalid date." };
+  if (typeof ciphertext !== "string" || ciphertext.length > MAX_BLOB_LENGTH) {
+    return { error: "Invalid data." };
+  }
 
   const membership = await getMembership(groupId, me.id);
   if (!membership) return { error: "You are not a member of this group." };
-
-  const where = and(
-    eq(availability.groupId, groupId),
-    eq(availability.userId, me.id),
-    eq(availability.date, date),
-  );
-
-  if (status === null) {
-    await db.delete(availability).where(where);
-    return {};
-  }
 
   await db
     .insert(availability)
@@ -39,13 +31,12 @@ export async function setAvailability(
       id: newId(),
       groupId,
       userId: me.id,
-      date,
-      status,
+      ciphertext,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
-      target: [availability.groupId, availability.userId, availability.date],
-      set: { status, updatedAt: new Date() },
+      target: [availability.groupId, availability.userId],
+      set: { ciphertext, updatedAt: new Date() },
     });
 
   return {};

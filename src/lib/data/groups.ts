@@ -1,17 +1,16 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, lte, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { availability, groupMembers, groups, user } from "@/db/schema";
-import { todayISO } from "@/lib/dates";
 
 export type GroupSummary = {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   role: "owner" | "member";
   memberCount: number;
-  nextMatch: string | null;
+  matchThreshold: number;
 };
 
 export type MemberInfo = {
@@ -21,15 +20,12 @@ export type MemberInfo = {
   joinedAt: Date;
 };
 
-export type DayAvailability = {
-  free: { userId: string; name: string }[];
-  maybe: { userId: string; name: string }[];
+/** Opaque encrypted availability blob of one member. */
+export type MemberBlob = {
+  userId: string;
+  name: string;
+  ciphertext: string;
 };
-
-/** How many free members a day needs to count as a match. */
-export function requiredCount(matchThreshold: number, memberCount: number): number {
-  return matchThreshold === 0 ? memberCount : Math.min(matchThreshold, memberCount);
-}
 
 export async function getMembership(groupId: string, userId: string) {
   const rows = await db
@@ -63,52 +59,52 @@ export async function getMembers(groupId: string): Promise<MemberInfo[]> {
   return rows;
 }
 
-/**
- * Availability of all members of a group within [start, end],
- * keyed by ISO date.
- */
-export async function getGroupAvailability(
-  groupId: string,
-  start: string,
-  end: string,
-): Promise<Map<string, DayAvailability>> {
-  const rows = await db
+/** Encrypted availability blobs of all members of one group. */
+export async function getAvailabilityBlobs(groupId: string): Promise<MemberBlob[]> {
+  return db
     .select({
-      date: availability.date,
-      status: availability.status,
       userId: availability.userId,
       name: user.name,
+      ciphertext: availability.ciphertext,
     })
     .from(availability)
     .innerJoin(user, eq(user.id, availability.userId))
-    .where(
-      and(
-        eq(availability.groupId, groupId),
-        gte(availability.date, start),
-        lte(availability.date, end),
-      ),
-    );
-
-  const byDate = new Map<string, DayAvailability>();
-  for (const row of rows) {
-    let day = byDate.get(row.date);
-    if (!day) {
-      day = { free: [], maybe: [] };
-      byDate.set(row.date, day);
-    }
-    day[row.status].push({ userId: row.userId, name: row.name });
-  }
-  return byDate;
+    .where(eq(availability.groupId, groupId));
 }
 
-/** All groups the user belongs to, with member counts and the next matching day. */
+/** Encrypted blobs across several groups (dashboard preview), keyed by group. */
+export async function getBlobsForGroups(groupIds: string[]): Promise<Map<string, MemberBlob[]>> {
+  const result = new Map<string, MemberBlob[]>();
+  if (groupIds.length === 0) return result;
+  const rows = await db
+    .select({
+      groupId: availability.groupId,
+      userId: availability.userId,
+      name: user.name,
+      ciphertext: availability.ciphertext,
+    })
+    .from(availability)
+    .innerJoin(user, eq(user.id, availability.userId))
+    .where(inArray(availability.groupId, groupIds));
+  for (const row of rows) {
+    let list = result.get(row.groupId);
+    if (!list) {
+      list = [];
+      result.set(row.groupId, list);
+    }
+    list.push({ userId: row.userId, name: row.name, ciphertext: row.ciphertext });
+  }
+  return result;
+}
+
+/** All groups the user belongs to, with member counts. */
 export async function getGroupsForUser(userId: string): Promise<GroupSummary[]> {
   const memberships = await db
     .select({
       groupId: groupMembers.groupId,
       role: groupMembers.role,
       name: groups.name,
-      emoji: groups.emoji,
+      icon: groups.icon,
       matchThreshold: groups.matchThreshold,
       joinedAt: groupMembers.joinedAt,
     })
@@ -120,9 +116,8 @@ export async function getGroupsForUser(userId: string): Promise<GroupSummary[]> 
   if (memberships.length === 0) return [];
 
   const groupIds = memberships.map((m) => m.groupId);
-
   const memberRows = await db
-    .select({ groupId: groupMembers.groupId, userId: groupMembers.userId })
+    .select({ groupId: groupMembers.groupId })
     .from(groupMembers)
     .where(inArray(groupMembers.groupId, groupIds));
   const memberCounts = new Map<string, number>();
@@ -130,53 +125,14 @@ export async function getGroupsForUser(userId: string): Promise<GroupSummary[]> 
     memberCounts.set(row.groupId, (memberCounts.get(row.groupId) ?? 0) + 1);
   }
 
-  // Free days from today onwards, used to compute the next match per group.
-  const today = todayISO();
-  const futureFree = await db
-    .select({
-      groupId: availability.groupId,
-      date: availability.date,
-    })
-    .from(availability)
-    .where(
-      and(
-        inArray(availability.groupId, groupIds),
-        gte(availability.date, today),
-        eq(availability.status, "free"),
-      ),
-    );
-
-  const freeCounts = new Map<string, Map<string, number>>();
-  for (const row of futureFree) {
-    let dates = freeCounts.get(row.groupId);
-    if (!dates) {
-      dates = new Map();
-      freeCounts.set(row.groupId, dates);
-    }
-    dates.set(row.date, (dates.get(row.date) ?? 0) + 1);
-  }
-
-  return memberships.map((m) => {
-    const memberCount = memberCounts.get(m.groupId) ?? 1;
-    const needed = requiredCount(m.matchThreshold, memberCount);
-    let nextMatch: string | null = null;
-    const dates = freeCounts.get(m.groupId);
-    if (dates && needed > 0) {
-      for (const [date, count] of dates) {
-        if (count >= needed && (nextMatch === null || date < nextMatch)) {
-          nextMatch = date;
-        }
-      }
-    }
-    return {
-      id: m.groupId,
-      name: m.name,
-      emoji: m.emoji,
-      role: m.role,
-      memberCount,
-      nextMatch,
-    };
-  });
+  return memberships.map((m) => ({
+    id: m.groupId,
+    name: m.name,
+    icon: m.icon,
+    role: m.role,
+    memberCount: memberCounts.get(m.groupId) ?? 1,
+    matchThreshold: m.matchThreshold,
+  }));
 }
 
 /**
@@ -213,99 +169,4 @@ export async function leaveOrDissolve(
   await db
     .delete(groupMembers)
     .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
-}
-
-export type GroupMatches = {
-  groupId: string;
-  name: string;
-  emoji: string;
-  memberCount: number;
-  matches: { date: string; freeCount: number }[];
-};
-
-/** All future match days across every group the user belongs to (for iCal feeds). */
-export async function getFutureMatchesForUser(userId: string): Promise<GroupMatches[]> {
-  const memberships = await db
-    .select({
-      groupId: groupMembers.groupId,
-      name: groups.name,
-      emoji: groups.emoji,
-      matchThreshold: groups.matchThreshold,
-    })
-    .from(groupMembers)
-    .innerJoin(groups, eq(groups.id, groupMembers.groupId))
-    .where(eq(groupMembers.userId, userId));
-
-  if (memberships.length === 0) return [];
-  const groupIds = memberships.map((m) => m.groupId);
-
-  const memberRows = await db
-    .select({ groupId: groupMembers.groupId })
-    .from(groupMembers)
-    .where(inArray(groupMembers.groupId, groupIds));
-  const memberCounts = new Map<string, number>();
-  for (const row of memberRows) {
-    memberCounts.set(row.groupId, (memberCounts.get(row.groupId) ?? 0) + 1);
-  }
-
-  const freeRows = await db
-    .select({ groupId: availability.groupId, date: availability.date })
-    .from(availability)
-    .where(
-      and(
-        inArray(availability.groupId, groupIds),
-        gte(availability.date, todayISO()),
-        eq(availability.status, "free"),
-      ),
-    );
-  const counts = new Map<string, Map<string, number>>();
-  for (const row of freeRows) {
-    let dates = counts.get(row.groupId);
-    if (!dates) {
-      dates = new Map();
-      counts.set(row.groupId, dates);
-    }
-    dates.set(row.date, (dates.get(row.date) ?? 0) + 1);
-  }
-
-  return memberships.map((m) => {
-    const memberCount = memberCounts.get(m.groupId) ?? 1;
-    const needed = requiredCount(m.matchThreshold, memberCount);
-    const matches = [...(counts.get(m.groupId) ?? new Map<string, number>())]
-      .filter(([, count]) => needed > 0 && count >= needed)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([date, freeCount]) => ({ date, freeCount }));
-    return { groupId: m.groupId, name: m.name, emoji: m.emoji, memberCount, matches };
-  });
-}
-
-/** Upcoming match days for a group (from today, limited). */
-export async function getUpcomingMatches(
-  groupId: string,
-  matchThreshold: number,
-  memberCount: number,
-  limit = 5,
-): Promise<{ date: string; freeCount: number }[]> {
-  const needed = requiredCount(matchThreshold, memberCount);
-  if (needed <= 0) return [];
-
-  const rows = await db
-    .select({ date: availability.date })
-    .from(availability)
-    .where(
-      and(
-        eq(availability.groupId, groupId),
-        gte(availability.date, todayISO()),
-        eq(availability.status, "free"),
-      ),
-    );
-
-  const counts = new Map<string, number>();
-  for (const row of rows) counts.set(row.date, (counts.get(row.date) ?? 0) + 1);
-
-  return [...counts.entries()]
-    .filter(([, count]) => count >= needed)
-    .sort(([a], [b]) => (a < b ? -1 : 1))
-    .slice(0, limit)
-    .map(([date, freeCount]) => ({ date, freeCount }));
 }

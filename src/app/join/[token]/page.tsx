@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { groups, invites } from "@/db/schema";
 import { JoinButton } from "@/components/join-button";
+import { GroupIcon, IconLink } from "@/components/icons";
 import { getMembership } from "@/lib/data/groups";
 import { hashToken } from "@/lib/ids";
 import { getSession } from "@/lib/session";
@@ -17,7 +18,8 @@ async function findValidInvite(token: string) {
       groupId: invites.groupId,
       expiresAt: invites.expiresAt,
       groupName: groups.name,
-      groupEmoji: groups.emoji,
+      groupIcon: groups.icon,
+      keyVerifier: groups.keyVerifier,
     })
     .from(invites)
     .innerJoin(groups, eq(groups.id, invites.groupId))
@@ -49,8 +51,8 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
       <div className="photo-backdrop" style={{ backgroundImage: "url(/images/beach.webp)" }} />
       {invite ? (
         <div className="card flex w-full flex-col items-center gap-4 p-8">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-2 text-3xl">
-            {invite.groupEmoji}
+          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+            <GroupIcon icon={invite.groupIcon} className="h-8 w-8" />
           </span>
           <div>
             <h1 className="text-xl font-bold">You&apos;re invited!</h1>
@@ -59,14 +61,16 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
               {" to share which days you're free."}
             </p>
           </div>
-          <JoinButton token={token} />
+          <JoinButton token={token} keyVerifier={invite.keyVerifier} />
           <Link href="/groups" className="text-sm text-ink-dim hover:text-ink">
             Not now
           </Link>
         </div>
       ) : (
         <div className="card flex w-full flex-col items-center gap-4 p-8">
-          <span className="text-3xl">😕</span>
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-ink-faint">
+            <IconLink className="h-7 w-7" />
+          </span>
           <h1 className="text-xl font-bold">Invite link expired</h1>
           <p className="text-sm text-ink-dim">
             This invite link is invalid or has expired. Ask your friend to send you a new one.

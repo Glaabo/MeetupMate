@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { LogoMark } from "@/components/icons";
 
 function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -44,8 +45,11 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10">
       <div className="photo-backdrop" style={{ backgroundImage: "url(/images/forest.webp)" }} />
-      <Link href="/" className="mb-8 text-center text-xl font-bold tracking-tight">
-        Meetup<span className="brand-text">Mate</span>
+      <Link href="/" className="mb-8 flex items-center justify-center gap-2 text-xl font-bold tracking-tight">
+        <LogoMark className="h-6 w-6 text-brand" />
+        <span>
+          Meetup<span className="brand-text">Mate</span>
+        </span>
       </Link>
 
       <div className="card p-6 sm:p-8">

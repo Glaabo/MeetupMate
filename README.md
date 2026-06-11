@@ -2,20 +2,23 @@
 
 Find days that work for everyone. Each person marks the days they're free (or could make work) per group, and the shared calendar instantly highlights the days where the whole group — or a configurable minimum — can meet.
 
-Designed around a calm cream + forest-green palette (`#FAF5EE` / `#1D503A`) with atmospheric nature photography on the landing, sign-in, and invite pages.
+**Availability is end-to-end encrypted: not even the person hosting the server can see who is free when.**
+
+Designed around a calm cream + forest-green palette (`#FAF5EE` / `#1D503A`) with a consistent hand-drawn pictogram set and atmospheric nature photography on the landing, sign-in, and invite pages.
 
 Mobile-first, privacy-focused, and fully self-hostable. **License: MIT** (commercial use allowed, see [Licensing](#licensing--commercial-use)).
 
 ## Features
 
-- **Email + password accounts** — only a display name, email and password are stored.
-- **Groups** — create as many as you like (football crew, book club, family…), each with its own shared calendar.
-- **Invite links** — high-entropy links that expire after 7 days; only the hash is stored server-side.
+- **End-to-end encrypted availability** — group keys are generated in the browser and shared only via the invite link's `#fragment` (never sent to any server). Marked days are encrypted on-device with AES-256-GCM; the server stores opaque blobs and matching is computed client-side.
+- **Email + password accounts** — only a display name, email and password hash are stored.
+- **Groups** — create as many as you like (football crew, book club, family…), each with its own shared calendar, pictogram, and encryption key.
+- **Invite links** — high-entropy links that expire after 7 days; only the hash is stored server-side, and the group key rides along in the URL fragment.
 - **Three-state availability** — *Free*, *Maybe*, or *Busy* per day, per group.
-- **Automatic matching** — days where everyone (or at least *N* people, configurable per group) is free light up, plus an "Upcoming matches" list and a "next match" preview on the dashboard.
+- **Automatic matching** — days where everyone (or at least *N* people, configurable per group) is free light up, plus an "Upcoming matches" list and a "next match" preview on the dashboard — all computed on-device.
 - **Ownership handover** — if an owner leaves or deletes their account, the longest-standing member takes over the group.
-- **Google / Apple Calendar sync** — every user can enable a personal iCal feed; subscribing from Google Calendar ("From URL") or Apple Calendar ("Calendar Subscription") makes match days appear there automatically as all-day events. Feed URLs are unguessable, stored only as hashes, and can be rotated or disabled anytime.
-- **Privacy controls** — one-click JSON data export and full account deletion; leaving a group erases your marked days there.
+- **Google / Apple Calendar sync (opt-in trade-off)** — a personal iCal feed for Google Calendar ("From URL") / Apple Calendar ("Calendar Subscription"). Because the server can't read availability, your device publishes the *computed match days* (group name + date only) when sync is explicitly enabled; disabling it erases them immediately.
+- **Privacy controls** — one-click JSON data export and full account deletion; leaving a group erases your encrypted blob there.
 - **PWA** — installable via "Add to Home Screen" on iOS/Android for an app-like experience.
 
 ## Stack
@@ -75,14 +78,15 @@ Data persists in the `meetupmate-data` volume; migrations run automatically on b
 
 Privacy is a design constraint, not an afterthought:
 
-- **Minimal data**: display name, email, salted password hash (scrypt via Better Auth), group memberships, and marked days. Nothing else.
-- **No tracking**: no analytics, no third-party requests at runtime (fonts are self-hosted at build time), no IP addresses stored with sessions.
-- **Scoped visibility**: your availability is only ever visible to members of the same group.
-- **Hashed invite tokens**: invite links are stored only as SHA-256 hashes and expire after 7 days, so a database leak doesn't expose working invite links.
-- **User control**: JSON export of all personal data and irreversible account deletion are built into Settings. Leaving a group deletes your marked days in it.
-- **Self-hosting**: the operator (you) controls the data — there is no vendor in the loop.
+- **The host can't read availability.** Each group has an AES-256-GCM key generated in the browser. It is stored in `localStorage` and shared with friends exclusively through the invite URL's `#fragment` — a part of the URL browsers never transmit to servers. The server (and therefore the host, or anyone who steals the database) only ever sees ciphertext.
+- **Key verification without key knowledge**: each group stores an encrypted sentinel so clients can verify a manually entered key; the server can't derive the key from it.
+- **Key responsibility**: if every member loses the group key, those marked days are gone — by design. Members can back the key up from the group settings.
+- **What the server does see** (be honest about metadata): emails, display names, group names, who belongs to which group, blob update timestamps — and match days *only* for users who explicitly enable calendar sync.
+- **Minimal data, no tracking**: no analytics, no third-party requests at runtime (fonts self-hosted at build time), no IP addresses stored with sessions.
+- **Hashed tokens**: invite links and calendar feed URLs are stored only as SHA-256 hashes.
+- **User control**: JSON export and irreversible account deletion built into Settings. Leaving a group deletes your encrypted blob; disabling calendar sync deletes all published match days.
 
-If you operate this for others in the EU, you're a data controller under GDPR: host in the EU, link the in-app [/privacy](src/app/privacy/page.tsx) page (adapt it with your contact details), and answer export/deletion requests — both of which the app already automates.
+If you operate this for others in the EU, you're a data controller under GDPR for the account data (emails, names): host in the EU, adapt the in-app [/privacy](src/app/privacy/page.tsx) page with your contact details, and answer export/deletion requests — both of which the app already automates. The availability content itself is encrypted and outside your reach.
 
 ## Licensing & commercial use
 
@@ -92,9 +96,9 @@ If you operate this for others in the EU, you're a data controller under GDPR: h
 
 ## Calendar sync notes
 
-The built-in sync uses the open **iCalendar standard** (one secret feed URL per user, served by the app itself). This works with Google Calendar, Apple Calendar, Outlook, Thunderbird, etc., requires no API keys, and shares no data with Google or Apple beyond the feed the user explicitly subscribes to. Caveat: subscribed calendars are refreshed on the provider's schedule (Google: every ~6–24 h; Apple: configurable, down to every 5 min).
+The built-in sync uses the open **iCalendar standard** (one secret feed URL per user, served by the app itself). This works with Google Calendar, Apple Calendar, Outlook, Thunderbird, etc., requires no API keys, and shares no data with Google or Apple beyond the feed the user explicitly subscribes to.
 
-A deeper *two-way* integration (writing events via the Google Calendar API / reading busy times) is possible later, but requires a Google Cloud OAuth app, a verification review, and storing OAuth tokens — meaningful privacy and maintenance costs that the feed approach avoids.
+Because availability is end-to-end encrypted, the server cannot compute the feed itself. Enabling sync makes the user's own device publish its locally computed **match days** (group name + date — never individual availability) to the server. This trade-off is explained in the UI, is off by default, and disabling sync erases the published days. Two caveats: open a group occasionally so your device can refresh the feed, and subscribed calendars refresh on the provider's schedule (Google: every ~6–24 h; Apple: configurable, down to every 5 min).
 
 ## Ideas for later
 

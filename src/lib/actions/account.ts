@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { calendarFeeds, groupMembers, user } from "@/db/schema";
+import { calendarFeeds, feedEvents, groupMembers, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { leaveOrDissolve } from "@/lib/data/groups";
 import { hashToken, newId, newInviteToken } from "@/lib/ids";
@@ -32,9 +32,13 @@ export async function rotateCalendarFeed(): Promise<{ url?: string; error?: stri
   return { url: `${base}/api/calendar/${token}.ics` };
 }
 
-/** Disables the caller's iCal feed; old URLs stop working immediately. */
+/**
+ * Disables the caller's iCal feed and erases all published match days —
+ * after this, no plaintext scheduling data of theirs remains on the server.
+ */
 export async function disableCalendarFeed(): Promise<{ error?: string }> {
   const me = await requireUser();
+  await db.delete(feedEvents).where(eq(feedEvents.userId, me.id));
   await db.delete(calendarFeeds).where(eq(calendarFeeds.userId, me.id));
   revalidatePath("/settings");
   return {};

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { disableCalendarFeed, rotateCalendarFeed } from "@/lib/actions/account";
+import { IconSync } from "@/components/icons";
 
 export function CalendarSync({ hasFeed }: { hasFeed: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -40,12 +41,19 @@ export function CalendarSync({ hasFeed }: { hasFeed: boolean }) {
 
   return (
     <section className="card p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-dim">
-        Calendar sync
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-ink-dim">
+        <IconSync className="h-4 w-4" /> Calendar sync
       </h2>
       <p className="mt-1 text-sm text-ink-dim">
         Subscribe from Google or Apple Calendar and your groups&apos; match days appear there
         automatically as all-day events.
+      </p>
+      <p className="mt-2 rounded-lg bg-brand/5 px-3 py-2 text-xs leading-relaxed text-ink-dim">
+        Privacy trade-off: availability is end-to-end encrypted, so the server can&apos;t build
+        this feed on its own. Enabling sync lets your device publish the <em>match days it
+        computed</em> (group name + date — never who is free when) to the server so your
+        calendar app can fetch them. Open a group occasionally to refresh the feed. Disabling
+        sync erases all published days immediately.
       </p>
 
       {url ? (

@@ -75,12 +75,18 @@ export const groups = sqliteTable(
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
-    emoji: text("emoji").notNull().default("📅"),
+    /** Pictogram slug (db column kept as "emoji" from an earlier iteration). */
+    icon: text("emoji").notNull().default("calendar"),
     /**
      * Minimum number of available members for a day to count as a match.
      * 0 means "everyone in the group".
      */
     matchThreshold: integer("match_threshold").notNull().default(0),
+    /**
+     * Sentinel value encrypted client-side with the group key. Lets clients
+     * verify a manually entered key without the server ever knowing the key.
+     */
+    keyVerifier: text("key_verifier"),
     createdById: text("created_by_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -142,6 +148,11 @@ export const calendarFeeds = sqliteTable("calendar_feeds", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+/**
+ * End-to-end encrypted availability. One blob per member per group containing
+ * their {date: status} map, encrypted in the browser with the group key.
+ * The server never sees dates or statuses — only opaque ciphertext.
+ */
 export const availability = sqliteTable(
   "availability",
   {
@@ -152,14 +163,39 @@ export const availability = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    /** ISO calendar date, e.g. "2026-07-14". Full days only. */
-    date: text("date").notNull(),
-    status: text("status", { enum: ["free", "maybe"] }).notNull(),
+    /** base64(IV || AES-GCM ciphertext) of the member's availability map. */
+    ciphertext: text("ciphertext").notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [
-    uniqueIndex("availability_group_user_date_uq").on(t.groupId, t.userId, t.date),
-    index("availability_group_date_idx").on(t.groupId, t.date),
+    uniqueIndex("availability_group_user_uq").on(t.groupId, t.userId),
     index("availability_user_idx").on(t.userId),
+  ],
+);
+
+/**
+ * Plaintext match days for the optional calendar feed. Only written when a
+ * user explicitly enables calendar sync; clients publish the match days they
+ * computed locally (group name + date — never individual availability).
+ */
+export const feedEvents = sqliteTable(
+  "feed_events",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    groupId: text("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    /** ISO calendar date of the match. */
+    date: text("date").notNull(),
+    /** Event title as computed by the client, e.g. "Book Club: everyone is free". */
+    title: text("title").notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("feed_events_user_group_date_uq").on(t.userId, t.groupId, t.date),
+    index("feed_events_user_idx").on(t.userId),
   ],
 );

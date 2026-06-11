@@ -1,7 +1,6 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { calendarFeeds } from "@/db/schema";
-import { getFutureMatchesForUser } from "@/lib/data/groups";
+import { calendarFeeds, feedEvents } from "@/db/schema";
 import { hashToken } from "@/lib/ids";
 
 function icsEscape(value: string): string {
@@ -20,9 +19,9 @@ function nextDay(iso: string): string {
 }
 
 /**
- * Personal iCal feed with every group's match days as all-day events.
- * Google Calendar ("From URL") and Apple Calendar ("New Calendar
- * Subscription") can subscribe to this endpoint and refresh automatically.
+ * Personal iCal feed. Availability is end-to-end encrypted, so the server
+ * cannot compute matches itself — this feed only contains match days that the
+ * user's own device published after they explicitly enabled calendar sync.
  */
 export async function GET(
   _request: Request,
@@ -41,8 +40,14 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const groupMatches = await getFutureMatchesForUser(feed.userId);
+  const events = await db
+    .select({ groupId: feedEvents.groupId, date: feedEvents.date, title: feedEvents.title })
+    .from(feedEvents)
+    .where(eq(feedEvents.userId, feed.userId))
+    .orderBy(asc(feedEvents.date));
+
   const now = `${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
+  const today = new Date().toISOString().slice(0, 10);
 
   const lines: string[] = [
     "BEGIN:VCALENDAR",
@@ -56,23 +61,18 @@ export async function GET(
     "X-PUBLISHED-TTL:PT6H",
   ];
 
-  for (const group of groupMatches) {
-    for (const match of group.matches) {
-      const summary =
-        match.freeCount === group.memberCount
-          ? `${group.emoji} ${group.name}: everyone is free!`
-          : `${group.emoji} ${group.name}: ${match.freeCount}/${group.memberCount} free`;
-      lines.push(
-        "BEGIN:VEVENT",
-        `UID:${group.groupId}-${match.date}@meetupmate`,
-        `DTSTAMP:${now}`,
-        `DTSTART;VALUE=DATE:${icsDate(match.date)}`,
-        `DTEND;VALUE=DATE:${icsDate(nextDay(match.date))}`,
-        `SUMMARY:${icsEscape(summary)}`,
-        "TRANSP:TRANSPARENT",
-        "END:VEVENT",
-      );
-    }
+  for (const event of events) {
+    if (event.date < today) continue;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${event.groupId}-${event.date}@meetupmate`,
+      `DTSTAMP:${now}`,
+      `DTSTART;VALUE=DATE:${icsDate(event.date)}`,
+      `DTEND;VALUE=DATE:${icsDate(nextDay(event.date))}`,
+      `SUMMARY:${icsEscape(event.title)}`,
+      "TRANSP:TRANSPARENT",
+      "END:VEVENT",
+    );
   }
 
   lines.push("END:VCALENDAR");

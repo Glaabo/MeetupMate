@@ -1,14 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { createGroup, type FormState } from "@/lib/actions/groups";
-
-const EMOJI_CHOICES = ["📅", "🍻", "⚽", "🎲", "🎬", "🏔️", "🍝", "🎮", "🧗", "🏖️"];
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { createGroup } from "@/lib/actions/groups";
+import { encryptJson, generateGroupKey, KEY_VERIFIER_SENTINEL } from "@/lib/crypto";
+import { storeGroupKey } from "@/lib/group-keys";
+import { GROUP_ICONS, IconLock } from "@/components/icons";
 
 export function CreateGroupForm({ firstGroup }: { firstGroup: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(firstGroup);
-  const [emoji, setEmoji] = useState("📅");
-  const [state, formAction, pending] = useActionState<FormState, FormData>(createGroup, null);
+  const [icon, setIcon] = useState<string>("calendar");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   if (!open) {
     return (
@@ -18,8 +22,29 @@ export function CreateGroupForm({ firstGroup }: { firstGroup: boolean }) {
     );
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const name = String(new FormData(e.currentTarget).get("name") ?? "").trim();
+
+    startTransition(async () => {
+      // The group key is generated here, in the browser, and never sent to
+      // the server — only an encrypted sentinel for later key verification.
+      const key = await generateGroupKey();
+      const keyVerifier = await encryptJson(key, KEY_VERIFIER_SENTINEL);
+      const result = await createGroup({ name, icon, keyVerifier });
+      if (result.error || !result.groupId) {
+        setError(result.error ?? "Something went wrong.");
+        return;
+      }
+      storeGroupKey(result.groupId, key);
+      router.push(`/groups/${result.groupId}` as never);
+      router.refresh();
+    });
+  }
+
   return (
-    <form action={formAction} className="card flex flex-col gap-4 p-5">
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4 p-5">
       <h2 className="font-semibold">New group</h2>
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
@@ -36,29 +61,37 @@ export function CreateGroupForm({ firstGroup }: { firstGroup: boolean }) {
 
       <div className="flex flex-col gap-1.5 text-sm font-medium">
         Icon
-        <input type="hidden" name="emoji" value={emoji} />
         <div className="flex flex-wrap gap-2">
-          {EMOJI_CHOICES.map((e) => (
+          {GROUP_ICONS.map(({ slug, label, Component }) => (
             <button
-              key={e}
+              key={slug}
               type="button"
-              onClick={() => setEmoji(e)}
-              aria-pressed={emoji === e}
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border text-xl transition-all hover:scale-110 ${
-                emoji === e
-                  ? "border-brand bg-brand/15"
-                  : "border-edge bg-surface-2 hover:border-edge-strong"
+              onClick={() => setIcon(slug)}
+              aria-pressed={icon === slug}
+              aria-label={label}
+              title={label}
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all hover:scale-110 ${
+                icon === slug
+                  ? "border-brand bg-brand/15 text-brand"
+                  : "border-edge bg-surface-2 text-ink-dim hover:border-edge-strong hover:text-ink"
               }`}
             >
-              {e}
+              <Component className="h-5 w-5" />
             </button>
           ))}
         </div>
       </div>
 
-      {state?.error && (
+      <p className="flex items-start gap-2 rounded-xl bg-brand/5 px-3 py-2.5 text-xs leading-relaxed text-ink-dim">
+        <IconLock className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+        A secret group key is created on this device. Availability is end-to-end encrypted with
+        it — the server can never read who&apos;s free when. The key travels to friends inside
+        your invite links.
+      </p>
+
+      {error && (
         <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-          {state.error}
+          {error}
         </p>
       )}
 

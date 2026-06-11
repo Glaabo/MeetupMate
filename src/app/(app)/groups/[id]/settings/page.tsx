@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import {
   DangerZone,
   GroupEditForm,
+  GroupKeySection,
   InviteSection,
   RemoveMemberButton,
 } from "@/components/group-settings";
+import { GroupIcon } from "@/components/icons";
 import { getGroupForMember, getMembers } from "@/lib/data/groups";
 import { requireUser } from "@/lib/session";
 
@@ -36,15 +38,18 @@ export default async function GroupSettingsPage({
         >
           ←
         </Link>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+          <GroupIcon icon={group.icon} className="h-5 w-5" />
+        </span>
         <div>
-          <h1 className="text-xl font-bold">
-            {group.emoji} {group.name}
-          </h1>
+          <h1 className="text-xl font-bold">{group.name}</h1>
           <p className="text-xs text-ink-dim">Group settings</p>
         </div>
       </div>
 
       <InviteSection groupId={id} />
+
+      <GroupKeySection groupId={id} />
 
       <section className="card p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-dim">
@@ -77,7 +82,7 @@ export default async function GroupSettingsPage({
         <GroupEditForm
           groupId={id}
           name={group.name}
-          emoji={group.emoji}
+          icon={group.icon}
           matchThreshold={group.matchThreshold}
           memberCount={members.length}
         />

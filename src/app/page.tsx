@@ -1,6 +1,25 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { IconShield, IconTarget, LogoMark, IconCalendar } from "@/components/icons";
 import { getSession } from "@/lib/session";
+
+const FEATURES = [
+  {
+    Icon: IconCalendar,
+    title: "Mark free days",
+    text: "Tap days you're free or could make work — per group.",
+  },
+  {
+    Icon: IconTarget,
+    title: "See matches",
+    text: "Days where everyone is free light up automatically.",
+  },
+  {
+    Icon: IconShield,
+    title: "Truly private",
+    text: "Availability is end-to-end encrypted — not even the server can read it.",
+  },
+];
 
 export default async function LandingPage() {
   const session = await getSession();
@@ -10,8 +29,11 @@ export default async function LandingPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-6 py-10">
       <div className="photo-backdrop" style={{ backgroundImage: "url(/images/forest.webp)" }} />
       <header className="flex items-center justify-between">
-        <span className="text-xl font-bold tracking-tight">
-          Meetup<span className="brand-text">Mate</span>
+        <span className="flex items-center gap-2 text-xl font-bold tracking-tight">
+          <LogoMark className="h-6 w-6 text-brand" />
+          <span>
+            Meetup<span className="brand-text">Mate</span>
+          </span>
         </span>
         <Link href="/login" className="btn-ghost px-4 py-2 text-sm">
           Sign in
@@ -40,30 +62,16 @@ export default async function LandingPage() {
       </section>
 
       <section className="grid gap-4 pb-10 sm:grid-cols-3">
-        {[
-          {
-            emoji: "🗓️",
-            title: "Mark free days",
-            text: "Tap days you're free or could make work — per group.",
-          },
-          {
-            emoji: "✨",
-            title: "See matches",
-            text: "Days where everyone is free light up automatically.",
-          },
-          {
-            emoji: "🔒",
-            title: "Private by design",
-            text: "Invite-only groups, no tracking, export or delete anytime.",
-          },
-        ].map((f) => (
+        {FEATURES.map(({ Icon, title, text }) => (
           <div
-            key={f.title}
+            key={title}
             className="card p-5 transition-transform duration-200 hover:-translate-y-1 hover:border-edge-strong"
           >
-            <div className="text-2xl">{f.emoji}</div>
-            <h2 className="mt-2 font-semibold">{f.title}</h2>
-            <p className="mt-1 text-sm text-ink-dim">{f.text}</p>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
+              <Icon className="h-5 w-5" />
+            </span>
+            <h2 className="mt-3 font-semibold">{title}</h2>
+            <p className="mt-1 text-sm text-ink-dim">{text}</p>
           </div>
         ))}
       </section>

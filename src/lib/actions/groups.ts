@@ -14,17 +14,23 @@ export type FormState = { error?: string } | null;
 
 const groupSchema = z.object({
   name: z.string().trim().min(1, "Please enter a group name.").max(60, "Name is too long."),
-  emoji: z.string().trim().min(1).max(8),
+  icon: z.string().regex(/^[a-z]{2,20}$/, "Invalid icon."),
+});
+
+const createSchema = groupSchema.extend({
+  /** base64url(IV || ciphertext) of the key sentinel, produced client-side. */
+  keyVerifier: z.string().min(16).max(500),
 });
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-export async function createGroup(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function createGroup(input: {
+  name: string;
+  icon: string;
+  keyVerifier: string;
+}): Promise<{ groupId?: string; error?: string }> {
   const me = await requireUser();
-  const parsed = groupSchema.safeParse({
-    name: formData.get("name"),
-    emoji: formData.get("emoji") || "📅",
-  });
+  const parsed = createSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
@@ -36,7 +42,8 @@ export async function createGroup(_prev: FormState, formData: FormData): Promise
       .values({
         id: groupId,
         name: parsed.data.name,
-        emoji: parsed.data.emoji,
+        icon: parsed.data.icon,
+        keyVerifier: parsed.data.keyVerifier,
         createdById: me.id,
         createdAt: now,
       })
@@ -52,7 +59,8 @@ export async function createGroup(_prev: FormState, formData: FormData): Promise
       .run();
   });
 
-  redirect(`/groups/${groupId}`);
+  revalidatePath("/groups");
+  return { groupId };
 }
 
 const updateSchema = groupSchema.extend({
@@ -70,7 +78,7 @@ export async function updateGroup(
 
   const parsed = updateSchema.safeParse({
     name: formData.get("name"),
-    emoji: formData.get("emoji") || "📅",
+    icon: formData.get("icon") || "calendar",
     matchThreshold: formData.get("matchThreshold") ?? 0,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -79,7 +87,7 @@ export async function updateGroup(
     .update(groups)
     .set({
       name: parsed.data.name,
-      emoji: parsed.data.emoji,
+      icon: parsed.data.icon,
       matchThreshold: parsed.data.matchThreshold,
     })
     .where(eq(groups.id, groupId));
