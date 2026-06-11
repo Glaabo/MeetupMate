@@ -1,17 +1,201 @@
 @import "tailwindcss";
 
-:root {
-  --background: #fafafa;
-  --foreground: #18181b;
+@theme {
+  --color-bg: #faf5ee;
+  --color-surface: #fffcf7;
+  --color-surface-2: #f1eadd;
+  --color-edge: rgba(29, 80, 58, 0.12);
+  --color-edge-strong: rgba(29, 80, 58, 0.28);
+
+  --color-ink: #1e2b23;
+  --color-ink-dim: #5c6b60;
+  --color-ink-faint: #97a399;
+
+  --color-brand: #1d503a;
+  --color-brand-2: #2e7d54;
+  --color-free: #2e7d54;
+  --color-maybe: #b07c14;
+  --color-match: #1d503a;
+  --color-danger: #b3402e;
+  --color-cream: #faf5ee;
+
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xl2: 1.25rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+html {
+  /* Kept on <html>, not <body>: body backgrounds would paint over the
+     fixed, negative z-index .photo-backdrop images. */
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(46, 125, 84, 0.08), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgba(29, 80, 58, 0.06), transparent 60%),
+    var(--color-bg);
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--color-ink);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(46, 125, 84, 0.25);
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-xl2);
+  box-shadow: 0 2px 12px rgba(29, 80, 58, 0.05);
+}
+
+@utility brand-gradient {
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+}
+
+@utility brand-text {
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+  background-clip: text;
+  color: transparent;
+}
+
+@utility input-base {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-edge-strong);
+  background: var(--color-surface);
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  color: var(--color-ink);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  &:focus {
+    border-color: var(--color-brand-2);
+    box-shadow: 0 0 0 3px rgba(46, 125, 84, 0.2);
+  }
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: var(--color-cream);
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+  box-shadow: 0 4px 16px rgba(29, 80, 58, 0.3);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 6px 24px rgba(29, 80, 58, 0.4);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: none;
+  }
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: var(--color-brand);
+  border: 1px solid var(--color-edge-strong);
+  background: var(--color-surface);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(29, 80, 58, 0.06);
+    border-color: var(--color-brand-2);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+@utility btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: var(--color-danger);
+  border: 1px solid rgba(179, 64, 46, 0.35);
+  background: rgba(179, 64, 46, 0.06);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(179, 64, 46, 0.14);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* Full-bleed photographic backdrop with a soft cream wash for readability. */
+@utility photo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  background-size: cover;
+  background-position: center;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(250, 245, 238, 0.22) 0%,
+      rgba(250, 245, 238, 0.45) 45%,
+      rgba(250, 245, 238, 0.92) 100%
+    );
+  }
 }

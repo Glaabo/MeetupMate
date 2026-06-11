@@ -1,20 +1,16 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: meetupmate
-      POSTGRES_PASSWORD: meetupmate
-      POSTGRES_DB: meetupmate
+  meetupmate:
+    build: .
     ports:
-      - "5432:5432"
+      - "3000:3000"
+    environment:
+      # Generate with: openssl rand -base64 32
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      # The public URL users reach the app at (https://... in production)
+      APP_URL: ${APP_URL:-http://localhost:3000}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U meetupmate -d meetupmate"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - meetupmate-data:/data
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  meetupmate-data:
