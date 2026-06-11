@@ -8,9 +8,10 @@ export default async function LandingPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-6 py-10">
+      <div className="photo-backdrop" style={{ backgroundImage: "url(/images/forest.webp)" }} />
       <header className="flex items-center justify-between">
         <span className="text-xl font-bold tracking-tight">
-          Free<span className="brand-text">Day</span>
+          Meetup<span className="brand-text">Mate</span>
         </span>
         <Link href="/login" className="btn-ghost px-4 py-2 text-sm">
           Sign in

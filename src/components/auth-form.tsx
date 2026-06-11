@@ -43,8 +43,9 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10">
+      <div className="photo-backdrop" style={{ backgroundImage: "url(/images/forest.webp)" }} />
       <Link href="/" className="mb-8 text-center text-xl font-bold tracking-tight">
-        Free<span className="brand-text">Day</span>
+        Meetup<span className="brand-text">Mate</span>
       </Link>
 
       <div className="card p-6 sm:p-8">

@@ -46,6 +46,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-6 py-10 text-center">
+      <div className="photo-backdrop" style={{ backgroundImage: "url(/images/beach.webp)" }} />
       {invite ? (
         <div className="card flex w-full flex-col items-center gap-4 p-8">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-2 text-3xl">
@@ -54,8 +55,8 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           <div>
             <h1 className="text-xl font-bold">You&apos;re invited!</h1>
             <p className="mt-1 text-sm text-ink-dim">
-              Join <span className="font-semibold text-ink">{invite.groupName}</span> to share
-              which days you&apos;re free.
+              Join <span className="font-semibold text-ink">{invite.groupName}</span>
+              {" to share which days you're free."}
             </p>
           </div>
           <JoinButton token={token} />

@@ -116,6 +116,9 @@ export function AvailabilityCalendar({
             const isPast = date < today;
             const isSelected = date === selected;
 
+            const othersCount =
+              freeCount - (mine === "free" ? 1 : 0) + maybeCount - (mine === "maybe" ? 1 : 0);
+
             return (
               <button
                 key={date}
@@ -125,26 +128,35 @@ export function AvailabilityCalendar({
                 aria-pressed={isSelected}
                 className={[
                   "relative flex aspect-square flex-col items-center justify-center rounded-xl border text-sm transition-all duration-150",
-                  "hover:scale-105 hover:border-edge-strong active:scale-95",
+                  "hover:scale-105 active:scale-95",
                   isMatch
-                    ? "border-match/60 bg-match/15 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                    ? "border-brand bg-brand text-cream shadow-[0_4px_14px_rgba(29,80,58,0.35)] hover:border-brand-2"
                     : mine === "free"
-                      ? "border-free/50 bg-free/10"
+                      ? "border-free/60 bg-free/10 hover:border-free"
                       : mine === "maybe"
-                        ? "border-maybe/50 bg-maybe/10"
-                        : "border-edge bg-surface-2",
-                  isSelected ? "ring-2 ring-brand" : "",
+                        ? "border-maybe/60 bg-maybe/10 hover:border-maybe"
+                        : "border-edge bg-surface hover:border-edge-strong",
+                  isSelected ? "ring-2 ring-brand-2 ring-offset-2 ring-offset-bg" : "",
                   isPast ? "opacity-40" : "",
                 ].join(" ")}
               >
-                <span className={`font-semibold ${isToday ? "brand-text" : ""}`}>{day}</span>
+                <span className={`font-semibold ${isToday && !isMatch ? "brand-text" : ""}`}>
+                  {day}
+                </span>
                 <span className="mt-0.5 flex h-2 items-center gap-0.5">
-                  {mine === "free" && <span className="h-1.5 w-1.5 rounded-full bg-free" />}
-                  {mine === "maybe" && <span className="h-1.5 w-1.5 rounded-full bg-maybe" />}
-                  {freeCount - (mine === "free" ? 1 : 0) + maybeCount - (mine === "maybe" ? 1 : 0) >
-                    0 && (
-                    <span className="text-[9px] font-bold leading-none text-ink-dim">
-                      +{freeCount - (mine === "free" ? 1 : 0) + maybeCount - (mine === "maybe" ? 1 : 0)}
+                  {mine === "free" && (
+                    <span className={`h-1.5 w-1.5 rounded-full ${isMatch ? "bg-cream" : "bg-free"}`} />
+                  )}
+                  {mine === "maybe" && (
+                    <span className={`h-1.5 w-1.5 rounded-full ${isMatch ? "bg-cream" : "bg-maybe"}`} />
+                  )}
+                  {othersCount > 0 && (
+                    <span
+                      className={`text-[9px] font-bold leading-none ${
+                        isMatch ? "text-cream/80" : "text-ink-dim"
+                      }`}
+                    >
+                      +{othersCount}
                     </span>
                   )}
                 </span>
@@ -217,7 +229,7 @@ export function AvailabilityCalendar({
               aria-pressed={selectedInfo.mine === null}
               className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all hover:scale-[1.03] active:scale-95 ${
                 selectedInfo.mine === null
-                  ? "border-edge-strong bg-white/10 text-ink"
+                  ? "border-brand/40 bg-brand/10 text-ink"
                   : "border-edge-strong bg-surface-2 text-ink-dim hover:text-ink"
               }`}
             >

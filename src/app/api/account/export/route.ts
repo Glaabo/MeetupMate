@@ -47,7 +47,7 @@ export async function GET() {
   return new Response(JSON.stringify(payload, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="freeday-export-${new Date().toISOString().slice(0, 10)}.json"`,
+      "Content-Disposition": `attachment; filename="meetupmate-export-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   });
 }

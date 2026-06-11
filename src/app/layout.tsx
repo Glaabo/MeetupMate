@@ -9,21 +9,21 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "FreeDay — find days that work for everyone",
-    template: "%s · FreeDay",
+    default: "MeetupMate — find days that work for everyone",
+    template: "%s · MeetupMate",
   },
   description:
     "Mark the days you're free, invite your friends, and instantly see which days work for the whole group.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "FreeDay",
-    statusBarStyle: "black-translucent",
+    title: "MeetupMate",
+    statusBarStyle: "default",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0c14",
+  themeColor: "#faf5ee",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

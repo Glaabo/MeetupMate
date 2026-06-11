@@ -33,7 +33,7 @@ export function InviteSection({ groupId }: { groupId: string }) {
     if (!url) return;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Join my FreeDay group", url });
+        await navigator.share({ title: "Join my MeetupMate group", url });
         return;
       } catch {
         // fall through to clipboard

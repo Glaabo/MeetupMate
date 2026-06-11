@@ -32,7 +32,7 @@ export default async function GroupSettingsPage({
         <Link
           href={`/groups/${id}`}
           aria-label="Back to calendar"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-edge-strong text-ink-dim transition-colors hover:bg-white/5 hover:text-ink"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-edge-strong text-ink-dim transition-colors hover:bg-brand/5 hover:text-ink"
         >
           ←
         </Link>

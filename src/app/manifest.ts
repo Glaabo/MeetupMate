@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "FreeDay",
-    short_name: "FreeDay",
+    name: "MeetupMate",
+    short_name: "MeetupMate",
     description: "Find days that work for everyone in your group.",
     start_url: "/groups",
     display: "standalone",
-    background_color: "#0a0c14",
-    theme_color: "#0a0c14",
+    background_color: "#faf5ee",
+    theme_color: "#1d503a",
     icons: [
       {
         src: "/icon.svg",

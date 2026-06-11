@@ -67,7 +67,7 @@ export const verification = sqliteTable(
 );
 
 /* ------------------------------------------------------------------ */
-/* FreeDay domain tables                                               */
+/* MeetupMate domain tables                                               */
 /* ------------------------------------------------------------------ */
 
 export const groups = sqliteTable(
@@ -127,6 +127,20 @@ export const invites = sqliteTable(
   },
   (t) => [index("invites_group_idx").on(t.groupId)],
 );
+
+/**
+ * Personal iCal feed subscriptions (Google/Apple Calendar sync).
+ * One feed per user; only the SHA-256 hash of the feed token is stored.
+ */
+export const calendarFeeds = sqliteTable("calendar_feeds", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
 
 export const availability = sqliteTable(
   "availability",

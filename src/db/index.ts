@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as schema from "./schema";
 
-const dbPath = process.env.DATABASE_PATH ?? "./data/freeday.db";
+const dbPath = process.env.DATABASE_PATH ?? "./data/meetupmate.db";
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const sqlite = new Database(dbPath);

@@ -28,7 +28,7 @@ export default async function GroupsPage() {
             <li key={g.id}>
               <Link
                 href={`/groups/${g.id}`}
-                className="card group flex items-center gap-4 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-edge-strong hover:shadow-[0_8px_30px_rgba(139,124,246,0.12)]"
+                className="card group flex items-center gap-4 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-edge-strong hover:shadow-[0_8px_30px_rgba(29,80,58,0.15)]"
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-2xl">
                   {g.emoji}

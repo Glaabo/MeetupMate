@@ -80,7 +80,7 @@ export default async function GroupPage({
         <Link
           href={`/groups/${id}/settings`}
           aria-label="Group settings"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge-strong text-ink-dim transition-colors hover:bg-white/5 hover:text-ink"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge-strong text-ink-dim transition-colors hover:bg-brand/5 hover:text-ink"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -93,7 +93,7 @@ export default async function GroupPage({
         <Link
           href={`/groups/${id}?month=${monthParam(prev.year, prev.month)}`}
           aria-label="Previous month"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-white/5 hover:text-ink"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-brand/5 hover:text-ink"
         >
           ←
         </Link>
@@ -103,7 +103,7 @@ export default async function GroupPage({
         <Link
           href={`/groups/${id}?month=${monthParam(next.year, next.month)}`}
           aria-label="Next month"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-white/5 hover:text-ink"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-brand/5 hover:text-ink"
         >
           →
         </Link>

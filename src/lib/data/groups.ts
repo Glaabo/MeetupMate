@@ -215,6 +215,70 @@ export async function leaveOrDissolve(
     .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
 }
 
+export type GroupMatches = {
+  groupId: string;
+  name: string;
+  emoji: string;
+  memberCount: number;
+  matches: { date: string; freeCount: number }[];
+};
+
+/** All future match days across every group the user belongs to (for iCal feeds). */
+export async function getFutureMatchesForUser(userId: string): Promise<GroupMatches[]> {
+  const memberships = await db
+    .select({
+      groupId: groupMembers.groupId,
+      name: groups.name,
+      emoji: groups.emoji,
+      matchThreshold: groups.matchThreshold,
+    })
+    .from(groupMembers)
+    .innerJoin(groups, eq(groups.id, groupMembers.groupId))
+    .where(eq(groupMembers.userId, userId));
+
+  if (memberships.length === 0) return [];
+  const groupIds = memberships.map((m) => m.groupId);
+
+  const memberRows = await db
+    .select({ groupId: groupMembers.groupId })
+    .from(groupMembers)
+    .where(inArray(groupMembers.groupId, groupIds));
+  const memberCounts = new Map<string, number>();
+  for (const row of memberRows) {
+    memberCounts.set(row.groupId, (memberCounts.get(row.groupId) ?? 0) + 1);
+  }
+
+  const freeRows = await db
+    .select({ groupId: availability.groupId, date: availability.date })
+    .from(availability)
+    .where(
+      and(
+        inArray(availability.groupId, groupIds),
+        gte(availability.date, todayISO()),
+        eq(availability.status, "free"),
+      ),
+    );
+  const counts = new Map<string, Map<string, number>>();
+  for (const row of freeRows) {
+    let dates = counts.get(row.groupId);
+    if (!dates) {
+      dates = new Map();
+      counts.set(row.groupId, dates);
+    }
+    dates.set(row.date, (dates.get(row.date) ?? 0) + 1);
+  }
+
+  return memberships.map((m) => {
+    const memberCount = memberCounts.get(m.groupId) ?? 1;
+    const needed = requiredCount(m.matchThreshold, memberCount);
+    const matches = [...(counts.get(m.groupId) ?? new Map<string, number>())]
+      .filter(([, count]) => needed > 0 && count >= needed)
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([date, freeCount]) => ({ date, freeCount }));
+    return { groupId: m.groupId, name: m.name, emoji: m.emoji, memberCount, matches };
+  });
+}
+
 /** Upcoming match days for a group (from today, limited). */
 export async function getUpcomingMatches(
   groupId: string,

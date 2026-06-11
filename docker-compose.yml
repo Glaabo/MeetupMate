@@ -1,5 +1,5 @@
 services:
-  freeday:
+  meetupmate:
     build: .
     ports:
       - "3000:3000"
@@ -9,8 +9,8 @@ services:
       # The public URL users reach the app at (https://... in production)
       APP_URL: ${APP_URL:-http://localhost:3000}
     volumes:
-      - freeday-data:/data
+      - meetupmate-data:/data
     restart: unless-stopped
 
 volumes:
-  freeday-data:
+  meetupmate-data:

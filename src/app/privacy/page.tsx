@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       </Link>
       <h1 className="mt-4 text-3xl font-bold">Privacy</h1>
       <p className="mt-2 text-ink-dim">
-        FreeDay is built to be private by default. Here is exactly what it stores and why.
+        MeetupMate is built to be private by default. Here is exactly what it stores and why.
       </p>
 
       <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-ink-dim [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-ink">
@@ -21,6 +21,10 @@ export default function PrivacyPage() {
             <li>Your display name and email address (for signing in).</li>
             <li>A salted hash of your password — never the password itself.</li>
             <li>The groups you belong to and the days you mark as free or maybe.</li>
+            <li>
+              If you enable calendar sync: a hashed feed token. The feed only contains match
+              days, and you can rotate or disable it anytime.
+            </li>
           </ul>
         </section>
 
@@ -52,7 +56,7 @@ export default function PrivacyPage() {
         <section>
           <h2>Hosting</h2>
           <p className="mt-2">
-            FreeDay is self-hostable open-source software (MIT license). The data lives in a
+            MeetupMate is self-hostable open-source software (MIT license). The data lives in a
             single database controlled by whoever runs the server — ideally you or a friend you
             trust. Always serve the app over HTTPS.
           </p>
