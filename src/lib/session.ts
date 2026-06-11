@@ -1,17 +1,18 @@
+import "server-only";
+
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth, type Session } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
-export async function getSession(): Promise<Session | null> {
-  return auth.api.getSession({
-    headers: await headers(),
-  });
-}
+/** Returns the current session or null. Memoized per request. */
+export const getSession = cache(async () => {
+  return auth.api.getSession({ headers: await headers() });
+});
 
-export async function requireSession(): Promise<Session> {
+/** Returns the current user or redirects to /login. */
+export async function requireUser() {
   const session = await getSession();
-  if (!session) {
-    redirect("/login");
-  }
-  return session;
+  if (!session) redirect("/login");
+  return session.user;
 }

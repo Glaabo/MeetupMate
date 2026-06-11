@@ -1,17 +1,177 @@
 @import "tailwindcss";
 
-:root {
-  --background: #fafafa;
-  --foreground: #18181b;
+@theme {
+  --color-bg: #0a0c14;
+  --color-surface: #11141f;
+  --color-surface-2: #171b2a;
+  --color-edge: rgba(255, 255, 255, 0.08);
+  --color-edge-strong: rgba(255, 255, 255, 0.16);
+
+  --color-ink: #eef0f8;
+  --color-ink-dim: #9aa1b5;
+  --color-ink-faint: #5f6679;
+
+  --color-brand: #8b7cf6;
+  --color-brand-2: #d36cf0;
+  --color-free: #34d399;
+  --color-maybe: #fbbf24;
+  --color-match: #22d3ee;
+  --color-danger: #f87171;
+
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xl2: 1.25rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+html {
+  background: var(--color-bg);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--color-ink);
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(139, 124, 246, 0.13), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgba(211, 108, 240, 0.08), transparent 60%),
+    var(--color-bg);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(139, 124, 246, 0.4);
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-xl2);
+}
+
+@utility brand-gradient {
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+}
+
+@utility brand-text {
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+  background-clip: text;
+  color: transparent;
+}
+
+@utility input-base {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-edge-strong);
+  background: var(--color-surface-2);
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  color: var(--color-ink);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  &:focus {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.25);
+  }
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: white;
+  background-image: linear-gradient(120deg, var(--color-brand), var(--color-brand-2));
+  box-shadow: 0 4px 20px rgba(139, 124, 246, 0.35);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 28px rgba(139, 124, 246, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: none;
+  }
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  border: 1px solid var(--color-edge-strong);
+  background: transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+@utility btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  color: var(--color-danger);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(248, 113, 113, 0.16);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }

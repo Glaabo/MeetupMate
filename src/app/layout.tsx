@@ -1,34 +1,38 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
+
 export const metadata: Metadata = {
-  title: "MeetupMate",
-  description: "Find days when friends can meet — privacy-first group availability",
-  applicationName: "MeetupMate",
+  title: {
+    default: "FreeDay — find days that work for everyone",
+    template: "%s · FreeDay",
+  },
+  description:
+    "Mark the days you're free, invite your friends, and instantly see which days work for the whole group.",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "MeetupMate",
+    title: "FreeDay",
+    statusBarStyle: "black-translucent",
   },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#0a0c14",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: "#059669",
+  viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full bg-zinc-50 text-zinc-900 antialiased">
-        {children}
-      </body>
+    <html lang="en" className={outfit.variable}>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

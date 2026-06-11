@@ -1,41 +1,63 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = { title: "Privacy" };
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-lg px-6 py-10 prose prose-zinc">
-      <Link href="/" className="text-sm text-emerald-700 no-underline">
-        Home
+    <main className="mx-auto w-full max-w-xl px-6 py-10">
+      <Link href="/" className="text-sm text-ink-dim hover:text-ink">
+        ← Back
       </Link>
-      <h1 className="mt-4 text-2xl font-bold">Privacy policy</h1>
-      <p className="text-sm text-zinc-600">Last updated: May 2026</p>
-
-      <h2 className="mt-6 text-lg font-semibold">What we store</h2>
-      <ul className="list-disc pl-5 text-sm text-zinc-700">
-        <li>Account: email, display name, and authentication records.</li>
-        <li>Groups: name, membership, and match rules you configure.</li>
-        <li>Availability: calendar days you mark as free, per group.</li>
-        <li>Invites: hashed tokens (not the raw link) with expiry.</li>
-      </ul>
-
-      <h2 className="mt-6 text-lg font-semibold">What we do not do</h2>
-      <ul className="list-disc pl-5 text-sm text-zinc-700">
-        <li>No import of Google/Apple calendars in v1.</li>
-        <li>No third-party analytics or advertising trackers in the app.</li>
-        <li>No selling of personal data.</li>
-      </ul>
-
-      <h2 className="mt-6 text-lg font-semibold">Your rights</h2>
-      <p className="text-sm text-zinc-700">
-        From Settings you can export all data tied to your account or delete
-        your account, which removes sessions, memberships, availability, and
-        groups you solely own (cascade rules apply via the database).
+      <h1 className="mt-4 text-3xl font-bold">Privacy</h1>
+      <p className="mt-2 text-ink-dim">
+        FreeDay is built to be private by default. Here is exactly what it stores and why.
       </p>
 
-      <h2 className="mt-6 text-lg font-semibold">Hosting</h2>
-      <p className="text-sm text-zinc-700">
-        When self-hosted, you control region and retention. For cloud deploys,
-        choose a region close to your users and configure database backups.
-      </p>
+      <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-ink-dim [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-ink">
+        <section>
+          <h2>What we store</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>Your display name and email address (for signing in).</li>
+            <li>A salted hash of your password — never the password itself.</li>
+            <li>The groups you belong to and the days you mark as free or maybe.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What we don&apos;t do</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>No analytics, no ad networks, no third-party trackers, no cookies beyond your session.</li>
+            <li>No IP addresses stored with your sessions.</li>
+            <li>Your availability is only visible to members of the same group — never publicly.</li>
+            <li>Invite links are stored only as cryptographic hashes and expire after 7 days.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Your rights &amp; control</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>
+              Export everything we store about you as JSON from{" "}
+              <Link href="/settings" className="text-brand hover:underline">
+                Settings
+              </Link>
+              .
+            </li>
+            <li>Delete your account at any time — all of your data is removed immediately.</li>
+            <li>When you leave a group, your marked days in that group are deleted.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Hosting</h2>
+          <p className="mt-2">
+            FreeDay is self-hostable open-source software (MIT license). The data lives in a
+            single database controlled by whoever runs the server — ideally you or a friend you
+            trust. Always serve the app over HTTPS.
+          </p>
+        </section>
+      </div>
     </main>
   );
 }
